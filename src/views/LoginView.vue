@@ -44,7 +44,7 @@ const router = useRouter();
 const handleLogin = async () => {
   loading.value = true;
   try {
-    const response = await axios.post('http://localhost:5000/login', {
+    const response = await axios.post('https://verizh-chain.vercel.app/login', {
       username: username.value,
       password: password.value
     });

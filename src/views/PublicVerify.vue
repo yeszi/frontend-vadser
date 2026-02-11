@@ -512,7 +512,7 @@ const verifyIjazah = async () => {
 
   try {
     console.log('Sending request to backend...')
-    const response = await axios.post('http://localhost:5000/verify_ijazah', formData, {
+    const response = await axios.post('https://verizh-chain.vercel.app/verify_ijazah', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       },

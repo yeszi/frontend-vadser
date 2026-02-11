@@ -654,7 +654,7 @@ const chainData = ref([])
 const currentTime = ref(new Date().toLocaleTimeString('id-ID'))
 
 // API
-const API_URL = 'http://localhost:5000'
+const API_URL = 'https://verizh-chain.vercel.app/chain'
 
 // Computed
 const formValid = computed(() => {
