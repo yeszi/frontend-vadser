@@ -250,7 +250,7 @@ const loading = ref(false)
 const chainData = ref([])
 
 // API
-const API_URL = 'http://localhost:5000'
+const API_URL = 'https://verizh-chain.vercel.app/chain'
 
 // Computed
 const filteredChain = computed(() => {
