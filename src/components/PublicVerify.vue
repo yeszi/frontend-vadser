@@ -27,7 +27,7 @@
       <div v-else-if="certificate" class="text-center">
         <div class="text-green-500 text-6xl mb-4">✓</div>
         <h2 class="text-xl font-bold text-green-600 mb-2">Certificate Valid</h2>
-        <p class="text-gray-600 mb-6">{{ certificate.message || 'Verified on Blockchain' }}</p>
+        <p class="text-gray-600 mb-6">Verified on Blockchain</p>
         
         <div class="border-t border-b border-gray-200 py-6">
           <h3 class="text-lg font-semibold mb-4">Certificate Details</h3>
@@ -46,12 +46,12 @@
             
             <div class="bg-gray-50 p-3 rounded">
               <label class="block text-xs text-gray-500 uppercase mb-1">Latitude</label>
-              <p class="font-semibold">{{ formatCoordinate(certificate.latitude) }}</p>
+              <p class="font-semibold">{{ certificate.latitude || '-' }}</p>
             </div>
             
             <div class="bg-gray-50 p-3 rounded">
               <label class="block text-xs text-gray-500 uppercase mb-1">Longitude</label>
-              <p class="font-semibold">{{ formatCoordinate(certificate.longitude) }}</p>
+              <p class="font-semibold">{{ certificate.longitude || '-' }}</p>
             </div>
             
             <div class="bg-gray-50 p-3 rounded">
@@ -88,14 +88,6 @@
             </div>
           </div>
         </div>
-        
-        <!-- QR Code for this certificate -->
-        <div class="mt-6">
-          <p class="text-sm text-gray-600 mb-2">Scan to verify again</p>
-          <div class="flex justify-center">
-            <qrcode-vue :value="currentUrl" :size="150" level="H" />
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -103,24 +95,18 @@
 
 <script>
 import { useRoute } from 'vue-router'
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import axios from 'axios'
-import QrcodeVue from 'qrcode.vue'
-import API_BASE_URL from '../config/api'
 
 export default {
   name: 'PublicVerify',
-  components: {
-    QrcodeVue
-  },
   setup() {
     const route = useRoute()
     const certificate = ref(null)
     const loading = ref(true)
     const error = ref(null)
     
-    const hash = computed(() => route.params.hash)
-    const currentUrl = computed(() => window.location.href)
+    const API_URL = 'https://vadser-chain.vercel.app'  // PASTIKAN INI BENAR!
     
     const formatDate = (dateString) => {
       if (!dateString) return '-'
@@ -138,42 +124,20 @@ export default {
       }
     }
     
-    const formatCoordinate = (coord) => {
-      if (coord === null || coord === undefined) return '-'
-      return Number(coord).toFixed(6)
-    }
-    
     onMounted(async () => {
       try {
-        if (!hash.value) {
-          throw new Error('No hash provided')
-        }
+        const hash = route.params.hash
+        if (!hash) throw new Error('No hash provided')
         
-        console.log('🔍 Verifying hash:', hash.value)
-        console.log('📡 API URL:', `${API_BASE_URL}/verify/${hash.value}`)
-        
-        const response = await axios.get(`${API_BASE_URL}/verify/${hash.value}`)
-        
-        console.log('✅ Verification response:', response.data)
+        const response = await axios.get(`${API_URL}/verify/${hash}`)
         
         if (response.data.status === 'VALID') {
           certificate.value = response.data.data
         } else {
           error.value = response.data.message || 'Certificate not found'
         }
-        
       } catch (err) {
-        console.error('❌ Verification error:', err)
-        
-        if (err.response) {
-          if (err.response.status === 404) {
-            error.value = err.response.data.message || 'Certificate not found'
-          } else {
-            error.value = err.response.data.message || 'Verification failed'
-          }
-        } else {
-          error.value = err.message
-        }
+        error.value = err.response?.data?.message || err.message
       } finally {
         loading.value = false
       }
@@ -183,10 +147,7 @@ export default {
       certificate,
       loading,
       error,
-      hash,
-      currentUrl,
-      formatDate,
-      formatCoordinate
+      formatDate
     }
   }
 }
