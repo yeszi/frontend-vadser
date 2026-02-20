@@ -1,159 +1,105 @@
 <template>
-  <div class="login-wrapper">
-    <div class="login-card">
-      <div class="brand-header">
-        <div class="icon-bg">🔐</div>
-        <h2>Admin Portal</h2>
-        <p>Verifikasi Ijazah Blockchain</p>
+  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 to-indigo-900">
+    <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+      <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">VeriZh Chain</h1>
+        <p class="text-gray-600 mt-2">Digital Certificate Verification System</p>
       </div>
-
+      
+      <div v-if="error" class="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
+        {{ error }}
+      </div>
+      
       <form @submit.prevent="handleLogin">
-        <div class="input-group">
-          <label>Username</label>
-          <input type="text" v-model="username" placeholder="admin" required />
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-bold mb-2">Username</label>
+          <input 
+            v-model="username" 
+            type="text" 
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Masukkan username"
+            required
+          />
         </div>
         
-        <div class="input-group">
-          <label>Password</label>
-          <input type="password" v-model="password" placeholder="••••••••" required />
+        <div class="mb-6">
+          <label class="block text-gray-700 text-sm font-bold mb-2">Password</label>
+          <input 
+            v-model="password" 
+            type="password" 
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Masukkan password"
+            required
+          />
         </div>
-
-        <button type="submit" class="btn-login" :disabled="loading">
-          <span v-if="!loading">Masuk Dashboard</span>
-          <span v-else class="loader"></span>
+        
+        <button 
+          type="submit" 
+          :disabled="loading"
+          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md disabled:opacity-50"
+        >
+          {{ loading ? 'Logging in...' : 'Login' }}
         </button>
       </form>
       
-      <router-link to="/" class="back-link">
-        <span class="arrow">←</span> Kembali ke Beranda
-      </router-link>
+      <button 
+        @click="testConnection" 
+        class="w-full mt-4 text-sm text-gray-500 hover:text-gray-700"
+      >
+        Test Connection
+      </button>
     </div>
   </div>
 </template>
 
-<script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import axios from 'axios';
+<script>
+import axios from 'axios'
+import API_BASE_URL from '../config/api'
 
-const username = ref('');
-const password = ref('');
-const loading = ref(false);
-const router = useRouter();
-
-const handleLogin = async () => {
-  loading.value = true;
-  try {
-    const response = await axios.post('http://localhost:5000/login', {
-      username: username.value,
-      password: password.value
-    });
-
-    if (response.data.success) {
-      localStorage.setItem('isAdminAuthenticated', 'true');
-      router.push('/admin');
+export default {
+  name: 'LoginView',
+  data() {
+    return {
+      username: '',
+      password: '',
+      loading: false,
+      error: null
     }
-  } catch (error) {
-    alert("Username atau Password salah!");
-  } finally {
-    loading.value = false;
+  },
+  methods: {
+    async testConnection() {
+      try {
+        this.error = null
+        const res = await axios.get(`${API_BASE_URL}/`)
+        alert('✅ Connected! ' + JSON.stringify(res.data))
+      } catch (err) {
+        this.error = `❌ Cannot connect: ${err.message}`
+      }
+    },
+    
+    async handleLogin() {
+      try {
+        this.error = null
+        this.loading = true
+        
+        const response = await axios.post(`${API_BASE_URL}/login`, {
+          username: this.username,
+          password: this.password
+        })
+        
+        if (response.data.success) {
+          localStorage.setItem('token', response.data.token)
+          this.$router.push('/admin')
+        } else {
+          throw new Error(response.data.message || 'Login failed')
+        }
+        
+      } catch (err) {
+        this.error = err.response?.data?.message || err.message
+      } finally {
+        this.loading = false
+      }
+    }
   }
-};
+}
 </script>
-
-<style scoped>
-/* Modern Reset */
-* { font-family: 'Inter', sans-serif; box-sizing: border-box; }
-
-.login-wrapper {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-  padding: 20px;
-}
-
-.login-card {
-  background: rgba(255, 255, 255, 1);
-  padding: 40px;
-  width: 100%;
-  max-width: 400px;
-  border-radius: 20px;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-  text-align: center;
-  animation: slideUp 0.5s ease-out;
-}
-
-.brand-header h2 {
-  font-family: 'Poppins', sans-serif;
-  color: #1e293b;
-  margin: 10px 0 5px;
-  font-weight: 700;
-}
-
-.brand-header p { color: #64748b; font-size: 0.9rem; margin-bottom: 30px; }
-
-.icon-bg {
-  font-size: 2.5rem;
-  background: #f1f5f9;
-  width: 80px;
-  height: 80px;
-  line-height: 80px;
-  border-radius: 50%;
-  margin: 0 auto;
-}
-
-.input-group { text-align: left; margin-bottom: 20px; }
-.input-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #334155; font-size: 0.9rem; }
-
-input { 
-  width: 100%; 
-  padding: 14px; 
-  border: 2px solid #e2e8f0; 
-  border-radius: 10px; 
-  font-size: 1rem;
-  transition: all 0.3s;
-  background: #f8fafc;
-}
-
-input:focus { 
-  border-color: #3b82f6; 
-  background: #fff;
-  outline: none; 
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-}
-
-.btn-login {
-  width: 100%;
-  padding: 14px;
-  background: linear-gradient(to right, #2563eb, #1d4ed8);
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  margin-top: 10px;
-  transition: transform 0.2s;
-}
-
-.btn-login:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2); }
-.btn-login:disabled { opacity: 0.7; cursor: not-allowed; }
-
-.back-link {
-  display: inline-block;
-  margin-top: 25px;
-  color: #64748b;
-  text-decoration: none;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: color 0.3s;
-}
-.back-link:hover { color: #2563eb; }
-
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-</style>
