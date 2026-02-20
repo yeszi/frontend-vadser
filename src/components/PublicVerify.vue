@@ -32,7 +32,7 @@
         <div class="border-t border-b border-gray-200 py-6">
           <h3 class="text-lg font-semibold mb-4">Certificate Details</h3>
           
-          <!-- Grid untuk 7 metadata -->
+          <!-- Grid untuk 8 metadata -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
             <div class="bg-gray-50 p-3 rounded">
               <label class="block text-xs text-gray-500 uppercase mb-1">Nama Event</label>
@@ -41,7 +41,7 @@
             
             <div class="bg-gray-50 p-3 rounded">
               <label class="block text-xs text-gray-500 uppercase mb-1">Nama Lokasi</label>
-              <p class="font-semibold">{{ certificate.lokasi_nama || '-' }}</p>
+              <p class="font-semibold">{{ certificate.nama_lokasi || '-' }}</p>
             </div>
             
             <div class="bg-gray-50 p-3 rounded">
@@ -57,6 +57,11 @@
             <div class="bg-gray-50 p-3 rounded">
               <label class="block text-xs text-gray-500 uppercase mb-1">Waktu Mulai</label>
               <p class="font-semibold">{{ formatDate(certificate.waktu_mulai) }}</p>
+            </div>
+            
+            <div class="bg-gray-50 p-3 rounded">
+              <label class="block text-xs text-gray-500 uppercase mb-1">Waktu Selesai</label>
+              <p class="font-semibold">{{ formatDate(certificate.waktu_selesai) }}</p>
             </div>
             
             <div class="bg-gray-50 p-3 rounded">
@@ -83,26 +88,39 @@
             </div>
           </div>
         </div>
+        
+        <!-- QR Code for this certificate -->
+        <div class="mt-6">
+          <p class="text-sm text-gray-600 mb-2">Scan to verify again</p>
+          <div class="flex justify-center">
+            <qrcode-vue :value="currentUrl" :size="150" level="H" />
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { useRoute, useRouter } from 'vue-router'
-import { ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
+import QrcodeVue from 'qrcode.vue'
+import API_BASE_URL from '../config/api'
 
 export default {
   name: 'PublicVerify',
+  components: {
+    QrcodeVue
+  },
   setup() {
     const route = useRoute()
-    const router = useRouter()
     const certificate = ref(null)
     const loading = ref(true)
     const error = ref(null)
     
-    const API_URL = 'https://verizh-chain.vercel.app'
+    const hash = computed(() => route.params.hash)
+    const currentUrl = computed(() => window.location.href)
     
     const formatDate = (dateString) => {
       if (!dateString) return '-'
@@ -127,15 +145,14 @@ export default {
     
     onMounted(async () => {
       try {
-        const hash = route.params.hash
-        
-        if (!hash) {
+        if (!hash.value) {
           throw new Error('No hash provided')
         }
         
-        console.log('🔍 Verifying hash:', hash)
+        console.log('🔍 Verifying hash:', hash.value)
+        console.log('📡 API URL:', `${API_BASE_URL}/verify/${hash.value}`)
         
-        const response = await axios.get(`${API_URL}/verify/${hash}`)
+        const response = await axios.get(`${API_BASE_URL}/verify/${hash.value}`)
         
         console.log('✅ Verification response:', response.data)
         
@@ -166,6 +183,8 @@ export default {
       certificate,
       loading,
       error,
+      hash,
+      currentUrl,
       formatDate,
       formatCoordinate
     }

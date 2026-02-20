@@ -23,6 +23,11 @@
         <div class="bg-white shadow rounded-lg p-6">
           <h2 class="text-2xl font-bold mb-6">Issue New Certificate</h2>
           
+          <!-- Connection Status -->
+          <div v-if="connectionStatus" :class="connectionStatus.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'" class="mb-4 p-3 rounded-md">
+            {{ connectionStatus.message }}
+          </div>
+          
           <!-- FORM 8 FIELD -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <!-- Nama Event -->
@@ -277,7 +282,7 @@
               </div>
             </div>
 
-            <!-- VERIFICATION LINK (PASTIKAN INI PAKAI URL VERCEL) -->
+            <!-- VERIFICATION LINK (PAKAI FRONTEND URL) -->
             <div class="mt-4 p-3 bg-blue-50 rounded-lg">
               <label class="text-xs text-gray-500 block mb-1">🔗 VERIFICATION LINK</label>
               <div class="flex items-center gap-2">
@@ -342,8 +347,10 @@ export default {
       certificateResult: null,
       verificationUrl: '',
       username: 'Admin',
-      API_URL: 'https://verizh-chain.vercel.app',  
-      FRONTEND_URL: 'https://verizh.vercel.app'  
+      // ✅ UPDATED with new URLs
+      API_URL: 'https://vadser-chain.vercel.app',    // BACKEND BARU
+      FRONTEND_URL: 'https://vadser.vercel.app',     // FRONTEND BARU
+      connectionStatus: null
     }
   },
   methods: {
@@ -408,6 +415,21 @@ export default {
       this.success = null
     },
     
+    async testConnection() {
+      try {
+        const res = await axios.get(`${this.API_URL}/chain`)
+        this.connectionStatus = {
+          type: 'success',
+          message: `✅ Connected to blockchain! Total blocks: ${res.data.length || 0}`
+        }
+      } catch (err) {
+        this.connectionStatus = {
+          type: 'error',
+          message: `❌ Cannot connect to backend: ${err.message}`
+        }
+      }
+    },
+    
     validateForm() {
       const required = [
         'nama_event', 'nama_lokasi', 'latitude', 'longitude', 
@@ -465,7 +487,8 @@ export default {
           keterangan: this.form.keterangan.trim()
         }
         
-        console.log('📤 Mengirim data:', postData)
+        console.log('📤 Mengirim data ke:', `${this.API_URL}/issue-sertifikat`)
+        console.log('📦 Data:', postData)
         
         // Kirim ke backend
         const response = await axios.post(`${this.API_URL}/issue-sertifikat`, postData, {
@@ -486,7 +509,7 @@ export default {
             previous_hash: response.data.previous_hash || '0'
           }
           
-          // 🔥 PERBAIKAN UTAMA: PAKAI FRONTEND_URL, BUKAN WINDOW.LOCATION.ORIGIN
+          // ✅ USING FRONTEND_URL, BUKAN WINDOW.LOCATION.ORIGIN
           this.verificationUrl = `${this.FRONTEND_URL}/verify/${response.data.hash}`
           
           this.success = '✅ Sertifikat berhasil dibuat!'
@@ -519,6 +542,9 @@ export default {
     const token = localStorage.getItem('token')
     if (!token) {
       this.$router.push('/')
+    } else {
+      // Test koneksi ke backend
+      this.testConnection()
     }
   }
 }
